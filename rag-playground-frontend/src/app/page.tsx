@@ -11,7 +11,8 @@ import AIFeatures from '@/components/AIFeatures';
 import Analytics from '@/components/Analytics';
 import ArchitectureComparison from '@/components/ArchitectureComparison';
 import { AISettings, ProcessingMetadata, RAGResult } from "@/types";
-import { API_URL } from '@/config';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const [results, setResults] = useState<RAGResult[]>([]);
@@ -48,6 +49,10 @@ export default function Home() {
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       if (data.results?.[0]?.metadata) {
@@ -57,8 +62,8 @@ export default function Home() {
       setResults(data.results);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      console.error("API Error:", err);
       setError(errorMessage);
-      console.error("Error:", errorMessage);
       setResults([]);
     } finally {
       setLoading(false);

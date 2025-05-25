@@ -18,17 +18,22 @@ load_dotenv()
 app = FastAPI()
 
 # Update CORS settings
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://rag-playground-frontend-gray.vercel.app").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 
 # Update UPLOAD_DIR path to be absolute
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_pdfs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Update port configuration
+PORT = int(os.getenv("PORT", 8000))
 
 @app.get("/health")
 async def health_check():
@@ -121,4 +126,7 @@ async def query(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print(f"Starting server on port {PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
+
+
