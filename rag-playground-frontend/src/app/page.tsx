@@ -19,13 +19,12 @@ export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aiSettings, setAISettings] = useState<AISettings>({
-    temperature: 0.7,
-    maxTokens: 2000,
-    chunkSize: 500,
-    modelType: 'llama3-70b-8192'
-  });
   const [processingMetadata, setProcessingMetadata] = useState<ProcessingMetadata | null>(null);
+
+  // Add dummy handler since settings are not being used
+  const handleSettingsChange = (settings: AISettings) => {
+    console.log('Settings changed:', settings);
+  };
 
   const handleQuery = async (query: string, architectures: string[]) => {
     if (!selectedFile) {
@@ -41,29 +40,28 @@ export default function Home() {
     formData.append("pdf", selectedFile);
     formData.append("query", query);
     formData.append("architectures", JSON.stringify(architectures));
-    formData.append('settings', JSON.stringify(aiSettings));
 
     try {
+      console.log('Sending request to:', API_URL);
       const response = await fetch(`${API_URL}/query`, {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'API request failed');
       }
 
       const data = await response.json();
+      setResults(data.results);
       
       if (data.results?.[0]?.metadata) {
         setProcessingMetadata(data.results[0].metadata);
       }
-      
-      setResults(data.results);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      console.error("API Error:", err);
-      setError(errorMessage);
+      console.error('API Error:', err);
+      setError(err instanceof Error ? err.message : "Failed to process request");
       setResults([]);
     } finally {
       setLoading(false);
@@ -138,7 +136,7 @@ export default function Home() {
 
           {/* Right Column - Settings & Info */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
-            <AIFeatures onSettingsChange={setAISettings} />
+            <AIFeatures onSettingsChange={handleSettingsChange} />
             <ArchitectureComparison />
             
             {/* Enhanced About RAG Section */}

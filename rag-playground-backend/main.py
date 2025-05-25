@@ -11,29 +11,35 @@ from rag_engine import (
     answer_with_reranker_rag
 )
 import json
+import gc
 
-# Load environment variables
+# Load environment variables and configure port
 load_dotenv()
-
-app = FastAPI()
+PORT = int(os.getenv("PORT", "10000"))
 
 # Update CORS settings
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://rag-playground-frontend-gray.vercel.app").split(",")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title="RAG Playground API",
+    description="API for RAG Playground",
+    version="1.0.0"
 )
+
+# Memory optimization
+@app.middleware("http")
+async def clean_up_memory(request, call_next):
+    response = await call_next(request)
+    gc.collect()  # Force garbage collection
+    return response
 
 # Update UPLOAD_DIR path to be absolute
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_pdfs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Update port configuration
-PORT = int(os.getenv("PORT", 8000))
+# Memory optimization settings
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB limit
+MAX_TEXT_LENGTH = 10000  # Limit text length
 
 @app.get("/health")
 async def health_check():
@@ -80,14 +86,15 @@ async def query(
             print(f"Saved PDF to {file_path}")
             
             # Process the PDF
-            text = extract_text_from_pdf(file_path)
+            text = extract_text_from_pdf(file_path)[:MAX_TEXT_LENGTH]
             if not text or not text.strip():
                 raise HTTPException(status_code=400, detail="No text content found in PDF")
             
-            # Process RAG queries
+            # Process one architecture at a time
             results = []
-            for arch in architectures_list:
+            for arch in architectures_list[:1]:  # Only process first selected architecture
                 try:
+                    gc.collect()  # Clean up before each processing
                     start_time = time.time()
                     if arch == "SimpleRAG":
                         result = answer_with_simple_rag(text, query)
@@ -127,6 +134,13 @@ async def query(
 if __name__ == "__main__":
     import uvicorn
     print(f"Starting server on port {PORT}")
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=PORT,
+        workers=1,
+        limit_max_requests=50,  # Restart worker after 50 requests
+        timeout_keep_alive=30
+    )
 
 

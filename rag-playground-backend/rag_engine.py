@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 import tiktoken
 import time
 from rag_metrics import RAGMetrics  # Change from relative to absolute import
+import torch
+import gc
 
 # Load environment variables
 load_dotenv()
@@ -23,13 +25,19 @@ llm = ChatGroq(
     temperature=0.7
 )
 
-# Initialize embeddings
-embedding_model = HuggingFaceEmbeddings(
-    model_name="all-MiniLM-L6-v2",
-    model_kwargs={'device': 'cpu'}
-)
+# Global variables for memory optimization
+_embedding_model = None
+_vectorstore = None
 
-reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+def get_embedding_model():
+    global _embedding_model
+    if _embedding_model is None:
+        _embedding_model = HuggingFaceEmbeddings(
+            model_name="all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
+    return _embedding_model
 
 # Initialize metrics
 metrics_analyzer = RAGMetrics()
@@ -86,22 +94,30 @@ def process_in_batches(text: str, max_tokens: int = 6000) -> str:
     
     return " ".join(batches)
 
+def clean_gpu_memory():
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
 def create_vector_store(text: str):
-    docs = split_and_annotate(text)
-    # Process chunks to ensure they're within token limits
-    processed_docs = []
-    for doc in docs:
-        doc.page_content = process_in_batches(doc.page_content)
-        processed_docs.append(doc)
-    
-    vectorstore = FAISS.from_documents(processed_docs, embedding_model)
-    bm25_retriever = BM25Retriever.from_documents(processed_docs)
-    metadata = {
-        "chunks": len(processed_docs),
-        "total_tokens": sum(count_tokens(doc.page_content) for doc in processed_docs),
-        "embedding_model": embedding_model.model_name
-    }
-    return vectorstore, bm25_retriever, processed_docs, metadata
+    try:
+        # Use smaller chunk size
+        splitter = CharacterTextSplitter(chunk_size=300, chunk_overlap=30)
+        docs = splitter.create_documents([text])
+        
+        # Limit number of chunks
+        if len(docs) > 20:
+            docs = docs[:20]
+        
+        vectorstore = FAISS.from_documents(docs, get_embedding_model())
+        gc.collect()  # Force garbage collection
+        
+        return vectorstore, None, docs, {
+            "chunks": len(docs),
+            "embedding_model": "all-MiniLM-L6-v2",
+            "total_tokens": sum(len(doc.page_content.split()) for doc in docs)
+        }
+    finally:
+        gc.collect()
 
 def track_processing_time(func):
     def wrapper(*args, **kwargs):
