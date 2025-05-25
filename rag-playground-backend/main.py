@@ -17,14 +17,15 @@ import logging
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 # Update port configuration
 PORT = int(os.getenv("PORT", 8000))
 HOST = os.getenv("HOST", "0.0.0.0")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
+# Update CORS settings with specific domain
+ALLOWED_ORIGINS = [
+    "https://cognitive-seven.vercel.app",
+    "http://localhost:3000",  # For local development
+]
 
 app = FastAPI(
     title="RAG Playground API",
@@ -32,14 +33,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Update CORS settings
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Configure more detailed logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Update UPLOAD_DIR path to be absolute
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_pdfs")
@@ -55,7 +63,10 @@ async def query(
     query: str = Form(...),
     architectures: str = Form(...)
 ):
+    logger.info(f"Received query request with file: {pdf.filename}")
+    
     if not pdf.filename.lower().endswith('.pdf'):
+        logger.error(f"Invalid file format: {pdf.filename}")
         raise HTTPException(
             status_code=400,
             detail="Invalid file format. Only PDF files are accepted."
@@ -63,12 +74,14 @@ async def query(
 
     file_path = None
     try:
-        # Parse architectures early to validate JSON
+        # Parse architectures with better error handling
         try:
             architectures_list = json.loads(architectures)
             if not architectures_list or not isinstance(architectures_list, list):
+                logger.error(f"Invalid architectures format: {architectures}")
                 raise HTTPException(status_code=400, detail="Invalid architectures format")
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid architectures JSON: {e}")
             raise HTTPException(status_code=400, detail="Invalid architectures JSON")
 
         # Save PDF with better error handling
@@ -77,8 +90,13 @@ async def query(
         
         try:
             content = await pdf.read()
-            if len(content) == 0:
+            content_size = len(content)
+            logger.info(f"PDF size: {content_size} bytes")
+            
+            if content_size == 0:
                 raise HTTPException(status_code=400, detail="Empty PDF file uploaded")
+            elif content_size > 10 * 1024 * 1024:  # 10MB limit
+                raise HTTPException(status_code=400, detail="PDF file too large. Maximum size is 10MB")
             
             # Ensure file handle is closed after writing
             with open(file_path, "wb") as f:
@@ -121,10 +139,17 @@ async def query(
             return {"results": results}
 
         except Exception as e:
-            if os.path.exists(file_path):
+            logger.error(f"Error processing request: {str(e)}")
+            if file_path and os.path.exists(file_path):
                 os.remove(file_path)
-            raise HTTPException(status_code=400, detail=str(e))
-            
+            raise HTTPException(status_code=500, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         # Cleanup in finally block
         try:
@@ -147,6 +172,7 @@ async def catch_exceptions_middleware(request, call_next):
         )
 
 if __name__ == "__main__":
+    logger.info(f"Starting server on {HOST}:{PORT}")
     import uvicorn
     uvicorn.run(
         app,
