@@ -34,28 +34,74 @@ reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
 # Initialize metrics
 metrics_analyzer = RAGMetrics()
 
+# Constants for token management
+MAX_TOKENS_LIMIT = 4000
+MAX_CONTEXT_LENGTH = 2000
+
 def count_tokens(text: str) -> int:
     encoding = tiktoken.get_encoding("cl100k_base")
     return len(encoding.encode(text))
 
 def split_and_annotate(text: str):
-    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    # Reduced chunk size and overlap for better token management
+    splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.create_documents([text])
     # Annotate with page numbers if possible
     for i, chunk in enumerate(chunks):
         chunk.metadata["page"] = i + 1
     return chunks
 
+def truncate_context(context: str, max_length: int = MAX_CONTEXT_LENGTH) -> str:
+    """Truncate context to fit within token limits."""
+    encoding = tiktoken.get_encoding("cl100k_base")
+    tokens = encoding.encode(context)
+    if len(tokens) > max_length:
+        tokens = tokens[:max_length]
+        context = encoding.decode(tokens)
+    return context
+
+def process_in_batches(text: str, max_tokens: int = 6000) -> str:
+    """Process large texts in batches to avoid token limits."""
+    encoding = tiktoken.get_encoding("cl100k_base")
+    tokens = encoding.encode(text)
+    
+    if len(tokens) <= max_tokens:
+        return text
+    
+    # Split into batches
+    batches = []
+    current_batch = []
+    current_length = 0
+    
+    for token in tokens:
+        if current_length + 1 > max_tokens:
+            batches.append(encoding.decode(current_batch))
+            current_batch = []
+            current_length = 0
+        current_batch.append(token)
+        current_length += 1
+    
+    if current_batch:
+        batches.append(encoding.decode(current_batch))
+    
+    return " ".join(batches)
+
 def create_vector_store(text: str):
     docs = split_and_annotate(text)
-    vectorstore = FAISS.from_documents(docs, embedding_model)
-    bm25_retriever = BM25Retriever.from_documents(docs)
+    # Process chunks to ensure they're within token limits
+    processed_docs = []
+    for doc in docs:
+        doc.page_content = process_in_batches(doc.page_content)
+        processed_docs.append(doc)
+    
+    vectorstore = FAISS.from_documents(processed_docs, embedding_model)
+    bm25_retriever = BM25Retriever.from_documents(processed_docs)
     metadata = {
-        "chunks": len(docs),
-        "total_tokens": sum(count_tokens(doc.page_content) for doc in docs),
+        "chunks": len(processed_docs),
+        "total_tokens": sum(count_tokens(doc.page_content) for doc in processed_docs),
         "embedding_model": embedding_model.model_name
     }
-    return vectorstore, bm25_retriever, docs, metadata
+    return vectorstore, bm25_retriever, processed_docs, metadata
 
 def track_processing_time(func):
     def wrapper(*args, **kwargs):
@@ -117,14 +163,24 @@ def track_processing_time(func):
 def answer_with_simple_rag(text: str, question: str):
     try:
         vectorstore, _, _, metadata = create_vector_store(text)
-        retriever = vectorstore.as_retriever(search_type="similarity", k=3)
-        chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
-        result = chain.invoke(question)
+        # Reduce number of retrieved documents
+        retriever = vectorstore.as_retriever(search_type="similarity", k=1)
+        
+        # Get relevant documents and limit context size
         docs = retriever.get_relevant_documents(question)
+        context = " ".join(doc.page_content for doc in docs)
+        context = truncate_context(context)
+        
+        # Create a simplified prompt with limited context
+        prompt = f"Question: {question}\nContext: {context}\nAnswer concisely:"
+        
+        # Use the LLM with processed context
+        result = llm.invoke(prompt)
+        
         return {
             "architecture": "SimpleRAG",
-            "answer": result["result"],
-            "sources": [{"content": doc.page_content, "page": doc.metadata.get("page")} for doc in docs],
+            "answer": result.content if hasattr(result, 'content') else result,
+            "sources": [{"content": doc.page_content[:500], "page": doc.metadata.get("page")} for doc in docs],
             "metadata": {
                 "chunks": metadata["chunks"],
                 "embedding_model": metadata["embedding_model"],
@@ -144,28 +200,34 @@ def answer_with_simple_rag(text: str, question: str):
 def answer_with_hybrid_rag(text: str, question: str):
     try:
         vectorstore, bm25_retriever, _, metadata = create_vector_store(text)
-        vector_docs = vectorstore.similarity_search(question, k=3)
-        bm25_docs = bm25_retriever.get_relevant_documents(question)
-        # Annotate sources
+        # Reduce retrieved documents
+        vector_docs = vectorstore.similarity_search(question, k=1)
+        bm25_docs = bm25_retriever.get_relevant_documents(question)[:1]
+        
+        # Process and combine contexts with limits
+        combined_context = []
         sources = []
         seen = set()
-        for doc in vector_docs:
-            key = doc.page_content
-            if key not in seen:
-                sources.append({"content": doc.page_content, "page": doc.metadata.get("page"), "retriever": "vector"})
-                seen.add(key)
-        for doc in bm25_docs:
-            key = doc.page_content
-            if key not in seen:
-                sources.append({"content": doc.page_content, "page": doc.metadata.get("page"), "retriever": "bm25"})
-                seen.add(key)
-        # Use vector retriever for answer
-        retriever = vectorstore.as_retriever(search_type="similarity", k=3)
-        chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
-        result = chain.invoke(question)
+        
+        for doc in vector_docs + bm25_docs:
+            if doc.page_content not in seen:
+                processed_content = truncate_context(doc.page_content, MAX_CONTEXT_LENGTH // 2)
+                combined_context.append(processed_content)
+                sources.append({
+                    "content": processed_content[:500],
+                    "page": doc.metadata.get("page"),
+                    "retriever": "vector" if doc in vector_docs else "bm25"
+                })
+                seen.add(doc.page_content)
+        
+        # Create simplified prompt with limited context
+        context = " ".join(combined_context)
+        prompt = f"Question: {question}\nContext: {context}\nAnswer concisely:"
+        result = llm.invoke(prompt)
+        
         return {
             "architecture": "HybridRAG",
-            "answer": result["result"],
+            "answer": result.content if hasattr(result, 'content') else result,
             "sources": sources,
             "metadata": {
                 "chunks": metadata["chunks"],
@@ -186,23 +248,28 @@ def answer_with_hybrid_rag(text: str, question: str):
 def answer_with_reranker_rag(text: str, question: str):
     try:
         vectorstore, _, _, metadata = create_vector_store(text)
-        initial_docs = vectorstore.similarity_search(question, k=10)
+        # Get more initial docs but fewer final ones
+        initial_docs = vectorstore.similarity_search(question, k=5)
         pairs = [(question, doc.page_content) for doc in initial_docs]
         scores = reranker.predict(pairs)
-        reranked = sorted(zip(scores, initial_docs), reverse=True)[:3]
-        docs = [doc for score, doc in reranked]
-        # Use top reranked docs for answer
-        chain = RetrievalQA.from_chain_type(llm=llm, retriever=vectorstore.as_retriever(search_type="similarity", k=3))
-        result = chain.invoke(question)
+        reranked = sorted(zip(scores, initial_docs), reverse=True)[:1]  # Only take top result
+        
+        # Process context with limits
+        context = truncate_context(reranked[0][1].page_content)
+        prompt = f"Question: {question}\nContext: {context}\nAnswer concisely:"
+        
+        # Use direct LLM call instead of chain
+        result = llm.invoke(prompt)
+        
         return {
             "architecture": "ReRankerRAG",
-            "answer": result["result"],
+            "answer": result.content if hasattr(result, 'content') else result,
             "sources": [
                 {
-                    "content": doc.page_content,
+                    "content": doc.page_content[:500],
                     "page": doc.metadata.get("page"),
                     "score": float(score)
-                } for score, doc in reranked
+                } for score, doc in reranked[:1]  # Only include top result
             ],
             "metadata": {
                 "chunks": metadata["chunks"],

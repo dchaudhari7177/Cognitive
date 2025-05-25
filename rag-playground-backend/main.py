@@ -11,19 +11,34 @@ from rag_engine import (
     answer_with_reranker_rag
 )
 import json
+import sys
+import logging
 
 # Load environment variables
 load_dotenv()
 
-app = FastAPI()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Update port configuration
+PORT = int(os.getenv("PORT", 8000))
+HOST = os.getenv("HOST", "0.0.0.0")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
+app = FastAPI(
+    title="RAG Playground API",
+    description="API for RAG Playground",
+    version="1.0.0"
+)
 
 # Update CORS settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Add your frontend URL
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 
 # Update UPLOAD_DIR path to be absolute
@@ -119,6 +134,24 @@ async def query(
         except Exception as e:
             print(f"Failed to cleanup file {file_path}: {str(e)}")
 
+# Add error handling middleware
+@app.middleware("http")
+async def catch_exceptions_middleware(request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error", "error": str(e)}
+        )
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app,
+        host=HOST,
+        port=PORT,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )

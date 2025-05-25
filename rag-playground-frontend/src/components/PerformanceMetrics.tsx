@@ -1,33 +1,33 @@
 import { motion } from 'framer-motion';
+import { Metrics } from '@/types/rag';
 
-interface MetricsProps {
-  metrics: any;
-  architecture: string;
+interface PerformanceMetricsProps {
+  metrics: Metrics | undefined;
+  architecture?: string;  // Make optional since it's not used
 }
 
-export default function PerformanceMetrics({ metrics, architecture }: MetricsProps) {
+export default function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   if (!metrics?.performance_metrics) return null;
 
   const {
-    relevance_scores,
     diversity_score,
     context_usage,
     confidence_score
   } = metrics.performance_metrics;
 
   return (
-    <div className="bg-gray-800/50 rounded-xl p-4 space-y-4">
-      <h3 className="text-sm font-medium text-gray-300">Performance Analysis</h3>
+    <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 space-y-4 border border-gray-200 dark:border-gray-700">
+      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Performance Analysis</h3>
       
       {/* Scores Display */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-900/50 p-3 rounded-lg">
+        <div className="bg-white dark:bg-gray-900/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="text-xs text-blue-400 mb-1">Context Usage</div>
           <div className="text-xl font-bold text-gray-200">
             {(context_usage * 100).toFixed(1)}%
           </div>
         </div>
-        <div className="bg-gray-900/50 p-3 rounded-lg">
+        <div className="bg-white dark:bg-gray-900/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="text-xs text-purple-400 mb-1">Diversity</div>
           <div className="text-xl font-bold text-gray-200">
             {(diversity_score * 100).toFixed(1)}%
@@ -51,7 +51,7 @@ export default function PerformanceMetrics({ metrics, architecture }: MetricsPro
       </div>
 
       {/* Memory Usage */}
-      <div className="text-xs text-gray-500 space-y-1">
+      <div className="text-xs text-gray-600 dark:text-gray-500 space-y-1">
         <div className="flex justify-between">
           <span>Memory Usage</span>
           <span>{(metrics.memory_usage?.embedding_size / 1024).toFixed(2)} KB</span>

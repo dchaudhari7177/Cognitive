@@ -1,4 +1,6 @@
-export default function ProcessingDetails({ result }: { result: any }) {
+import { RAGResult } from '@/types/rag';
+
+export default function ProcessingDetails({ result }: { result: RAGResult }) {
   const metadata = result?.metadata || {};
 
   return (

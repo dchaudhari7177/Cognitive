@@ -2,9 +2,13 @@ import ProcessingDetails from './ProcessingDetails';
 import ProcessingAnalytics from './ProcessingAnalytics';
 import PerformanceMetrics from './PerformanceMetrics';
 import { motion } from 'framer-motion';
+import { RAGResult, Source } from '@/types/rag';
 
-export default function ResultsDisplay({ results }: { results: any[] }) {
-  if (!results.length) return null;
+export default function ResultsDisplay({ results }: { results: RAGResult[] }) {
+  // Add null check and default to empty array
+  if (!Array.isArray(results) || results.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-8">
@@ -24,7 +28,7 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
                   <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
                     <span className="text-blue-400 font-bold text-xl">{index + 1}</span>
                   </div>
-                  <h2 className="font-bold text-xl text-gray-100">{result.architecture}</h2>
+                  <h2 className="font-bold text-xl text-gray-100">{result?.architecture || 'Unknown'}</h2>
                 </div>
               </div>
 
@@ -33,8 +37,8 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
                 {/* Answer Section */}
                 <div className="mb-6">
                   <h3 className="text-sm font-semibold text-gray-400 mb-2">Answer:</h3>
-                  <div className={`${result.answer.startsWith('Error:') ? 'text-red-400' : 'text-gray-200'}`}>
-                    {result.answer}
+                  <div className={`${result?.answer?.startsWith('Error:') ? 'text-red-400' : 'text-gray-200'}`}>
+                    {result?.answer || 'No answer available'}
                   </div>
                 </div>
 
@@ -42,15 +46,15 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
                 <div className="mb-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-2">Sources:</h3>
                   <ul className="space-y-2 text-sm">
-                    {result.sources?.length ? (
-                      result.sources.map((src: any, i: number) => (
+                    {result?.sources?.length ? (
+                      result.sources.map((src: Source, i: number) => (
                         <li key={i} className="bg-gray-900/50 rounded p-2">
-                          <span className="font-mono text-gray-300">{src.content.slice(0, 100)}...</span>
+                          <span className="font-mono text-gray-300">{src?.content?.slice(0, 100) || ''}...</span>
                           <div className="flex items-center mt-1 space-x-2 text-xs">
-                            {src.page && (
+                            {src?.page && (
                               <span className="text-blue-400">[Page {src.page}]</span>
                             )}
-                            {src.score && (
+                            {src?.score && (
                               <span className="text-green-400">Score: {src.score.toFixed(3)}</span>
                             )}
                           </div>
@@ -68,7 +72,7 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
                 <ProcessingDetails result={result} />
                 <div className="mt-2 text-xs text-gray-500 flex justify-between items-center">
                   <span>Processing Time:</span>
-                  <span className="font-mono text-blue-400">{result.time}s</span>
+                  <span className="font-mono text-blue-400">{result?.time || 0}s</span>
                 </div>
               </div>
             </motion.div>
@@ -76,10 +80,10 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
           
           {/* Analytics Panel */}
           <div className="lg:col-span-1 space-y-4">
-            <ProcessingAnalytics metrics={result.metrics} />
+            <ProcessingAnalytics metrics={result?.metrics} />
             <PerformanceMetrics 
-              metrics={result.metrics}
-              architecture={result.architecture}
+              metrics={result?.metrics}
+              architecture={result?.architecture}
             />
           </div>
         </div>
