@@ -105,7 +105,7 @@ export default function Documentation() {
               <li><span className="text-blue-400 font-semibold">Processing Time:</span> Time taken for each step (chunking, embedding, retrieval, generation).</li>
               <li><span className="text-purple-400 font-semibold">Context Usage:</span> How much of the retrieved context was used in the answer.</li>
               <li><span className="text-green-400 font-semibold">Diversity:</span> Measures the uniqueness of retrieved sources.</li>
-              <li><span className="text-yellow-400 font-semibold">Confidence Score:</span> Indicates the model's confidence in the answer.</li>
+              <li><span className="text-yellow-400 font-semibold">Confidence Score:</span> Indicates the models confidence in the answer.</li>
               <li><span className="text-pink-400 font-semibold">Memory Usage:</span> Embedding and chunk statistics for each query.</li>
             </ul>
           </div>
@@ -122,7 +122,7 @@ export default function Documentation() {
               </div>
               <div>
                 <span className="font-semibold text-blue-300">Q:</span> Can I upload multiple PDFs?<br/>
-                <span className="ml-6">A: Currently, only one PDF can be uploaded at a time.</span>
+                <span className="ml-6">A: Multiple PDF upload is not supported at this time.</span>
               </div>
               <div>
                 <span className="font-semibold text-blue-300">Q:</span> What models are used?<br/>
@@ -130,7 +130,7 @@ export default function Documentation() {
               </div>
               <div>
                 <span className="font-semibold text-blue-300">Q:</span> Where can I get support?<br/>
-                <span className="ml-6">A: Visit <a href="https://dipakchaudhari.com" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">dipakchaudhari.com</a> for help or to contact the author.</span>
+                <span className="ml-6">A: Visit <a href="https://dipakchaudhari.com" className="text-blue-400 underline">dipakchaudhari.com</a> for help or to contact the author.</span>
               </div>
             </div>
           </div>

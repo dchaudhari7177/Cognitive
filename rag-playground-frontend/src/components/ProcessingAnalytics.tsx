@@ -1,19 +1,11 @@
 import { motion } from 'framer-motion';
+import { Metrics, MetricStep } from '@/types/rag';
 
-interface ProcessingStep {
-  name: string;
-  duration: number;
-  chunks?: number;
-  vectors?: number;
+interface ProcessingAnalyticsProps {
+  metrics: Metrics | undefined;
 }
 
-interface Metrics {
-  start_time: number;
-  total_duration: number;
-  steps: ProcessingStep[];
-}
-
-export default function ProcessingAnalytics({ metrics }: { metrics?: Metrics }) {
+export default function ProcessingAnalytics({ metrics }: ProcessingAnalyticsProps) {
   if (!metrics) return null;
 
   const getStepColor = (step: string) => {
@@ -31,7 +23,7 @@ export default function ProcessingAnalytics({ metrics }: { metrics?: Metrics }) 
       
       {/* Timeline */}
       <div className="space-y-4 mb-6">
-        {metrics.steps.map((step, index) => (
+        {metrics.steps.map((step: MetricStep) => (
           <div key={step.name} className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-400 capitalize">

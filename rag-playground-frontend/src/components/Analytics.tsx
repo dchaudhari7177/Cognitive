@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
+import { AnalyticsProps } from '@/types';
 
-export default function Analytics({ processing, metadata }: { processing: boolean; metadata: any }) {
+export default function Analytics({ processing, metadata }: AnalyticsProps) {
   const stages = [
     { name: 'Text Extraction', color: 'blue' },
     { name: 'Chunking', color: 'purple' },

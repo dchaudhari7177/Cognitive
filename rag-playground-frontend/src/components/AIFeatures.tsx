@@ -1,13 +1,18 @@
 import { useState } from 'react';
+import { AISettings } from '@/types';
 
-interface AISettings {
-  temperature: number;
-  maxTokens: number;
-  chunkSize: number;
-  modelType: string;
+interface AIFeaturesProps {
+  onSettingsChange: (settings: AISettings) => void;
 }
 
-export default function AIFeatures({ onSettingsChange }: { onSettingsChange: (settings: AISettings) => void }) {
+interface ChangeEvent {
+  target: {
+    name: string;
+    value: string | number;
+  };
+}
+
+export default function AIFeatures({ onSettingsChange }: AIFeaturesProps) {
   const [settings, setSettings] = useState<AISettings>({
     temperature: 0.7,
     maxTokens: 2000,
@@ -15,8 +20,9 @@ export default function AIFeatures({ onSettingsChange }: { onSettingsChange: (se
     modelType: 'llama3-70b-8192'
   });
 
-  const handleChange = (key: keyof AISettings, value: any) => {
-    const newSettings = { ...settings, [key]: value };
+  const handleChange = (e: ChangeEvent) => {
+    const { name, value } = e.target;
+    const newSettings = { ...settings, [name]: value };
     setSettings(newSettings);
     onSettingsChange(newSettings);
   };
@@ -29,8 +35,9 @@ export default function AIFeatures({ onSettingsChange }: { onSettingsChange: (se
         <div>
           <label className="text-gray-300 mb-2 block">Model Selection</label>
           <select
+            name="modelType"
             value={settings.modelType}
-            onChange={(e) => handleChange('modelType', e.target.value)}
+            onChange={handleChange}
             className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-gray-100"
           >
             <option value="llama3-70b-8192">Llama 3 (70B)</option>
@@ -45,11 +52,12 @@ export default function AIFeatures({ onSettingsChange }: { onSettingsChange: (se
           </label>
           <input
             type="range"
+            name="temperature"
             min="0"
             max="1"
             step="0.1"
             value={settings.temperature}
-            onChange={(e) => handleChange('temperature', parseFloat(e.target.value))}
+            onChange={handleChange}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-gray-500">
@@ -64,11 +72,12 @@ export default function AIFeatures({ onSettingsChange }: { onSettingsChange: (se
           </label>
           <input
             type="range"
+            name="chunkSize"
             min="100"
             max="1000"
             step="100"
             value={settings.chunkSize}
-            onChange={(e) => handleChange('chunkSize', parseInt(e.target.value))}
+            onChange={handleChange}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-gray-500">

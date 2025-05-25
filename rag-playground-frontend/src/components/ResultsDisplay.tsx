@@ -2,8 +2,9 @@ import ProcessingDetails from './ProcessingDetails';
 import ProcessingAnalytics from './ProcessingAnalytics';
 import PerformanceMetrics from './PerformanceMetrics';
 import { motion } from 'framer-motion';
+import { RAGResult, Source } from '@/types/rag';
 
-export default function ResultsDisplay({ results }: { results: any[] }) {
+export default function ResultsDisplay({ results }: { results: RAGResult[] }) {
   // Add null check and default to empty array
   if (!Array.isArray(results) || results.length === 0) {
     return null;
@@ -46,7 +47,7 @@ export default function ResultsDisplay({ results }: { results: any[] }) {
                   <h3 className="text-sm font-semibold text-gray-400 mb-2">Sources:</h3>
                   <ul className="space-y-2 text-sm">
                     {result?.sources?.length ? (
-                      result.sources.map((src: any, i: number) => (
+                      result.sources.map((src: Source, i: number) => (
                         <li key={i} className="bg-gray-900/50 rounded p-2">
                           <span className="font-mono text-gray-300">{src?.content?.slice(0, 100) || ''}...</span>
                           <div className="flex items-center mt-1 space-x-2 text-xs">

@@ -1,37 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import PDFUpload from "@/components/PDFUpload";
 import QueryForm from "@/components/QueryForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ThemeToggle from "@/components/ThemeToggle";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import AdvancedSettings, { RAGSettings } from '@/components/AdvancedSettings';
 import AIFeatures from '@/components/AIFeatures';
 import Analytics from '@/components/Analytics';
 import ArchitectureComparison from '@/components/ArchitectureComparison';
+import { AISettings, ProcessingMetadata, RAGResult } from "@/types";
+import { API_URL } from '@/config';
 
 export default function Home() {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<RAGResult[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ragSettings, setRagSettings] = useState<RAGSettings>({
-    chunkSize: 500,
-    chunkOverlap: 50,
-    topK: 3,
-    temperature: 0.7,
-    embeddingModel: "all-MiniLM-L6-v2"
-  });
-  const [aiSettings, setAISettings] = useState({
+  const [aiSettings, setAISettings] = useState<AISettings>({
     temperature: 0.7,
     maxTokens: 2000,
     chunkSize: 500,
     modelType: 'llama3-70b-8192'
   });
-  const [processingMetadata, setProcessingMetadata] = useState<any>(null);
+  const [processingMetadata, setProcessingMetadata] = useState<ProcessingMetadata | null>(null);
 
   const handleQuery = async (query: string, architectures: string[]) => {
     if (!selectedFile) {
@@ -50,7 +43,7 @@ export default function Home() {
     formData.append('settings', JSON.stringify(aiSettings));
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/query`, {
+      const response = await fetch(`${API_URL}/query`, {
         method: "POST",
         body: formData,
       });
@@ -62,9 +55,10 @@ export default function Home() {
       }
       
       setResults(data.results);
-    } catch (error) {
-      console.error("Error:", error);
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+      console.error("Error:", errorMessage);
       setResults([]);
     } finally {
       setLoading(false);
@@ -123,6 +117,12 @@ export default function Home() {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
                 <span className="ml-3 text-gray-400">Processing your query...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="text-red-400 bg-red-400/10 p-4 rounded-lg mb-4">
+                {error}
               </div>
             )}
 

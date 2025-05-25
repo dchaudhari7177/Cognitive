@@ -1,5 +1,16 @@
 import { useState } from 'react';
 
+interface SettingsChangeHandler {
+  (settings: RAGSettings): void;
+}
+
+interface InputChangeEvent {
+  target: {
+    name: string;
+    value: string | number;
+  }
+}
+
 export interface RAGSettings {
   chunkSize: number;
   chunkOverlap: number;
@@ -8,7 +19,7 @@ export interface RAGSettings {
   embeddingModel: string;
 }
 
-export default function AdvancedSettings({ onChange }: { onChange: (settings: RAGSettings) => void }) {
+export default function AdvancedSettings({ onSettingsChange }: { onSettingsChange: SettingsChangeHandler }) {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<RAGSettings>({
     chunkSize: 500,
@@ -18,10 +29,15 @@ export default function AdvancedSettings({ onChange }: { onChange: (settings: RA
     embeddingModel: "all-MiniLM-L6-v2"
   });
 
-  const handleChange = (field: keyof RAGSettings, value: any) => {
+  const handleChange = (field: keyof RAGSettings, value: string | number) => {
     const newSettings = { ...settings, [field]: value };
     setSettings(newSettings);
-    onChange(newSettings);
+    onSettingsChange(newSettings);
+  };
+
+  const handleInputChange = (e: InputChangeEvent) => {
+    const { name, value } = e.target;
+    handleChange(name as keyof RAGSettings, value);
   };
 
   return (
@@ -50,8 +66,9 @@ export default function AdvancedSettings({ onChange }: { onChange: (settings: RA
               </label>
               <input
                 type="number"
+                name="chunkSize"
                 value={settings.chunkSize}
-                onChange={(e) => handleChange('chunkSize', parseInt(e.target.value))}
+                onChange={handleInputChange}
                 className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100"
               />
             </div>
@@ -61,8 +78,9 @@ export default function AdvancedSettings({ onChange }: { onChange: (settings: RA
               </label>
               <input
                 type="number"
+                name="chunkOverlap"
                 value={settings.chunkOverlap}
-                onChange={(e) => handleChange('chunkOverlap', parseInt(e.target.value))}
+                onChange={handleInputChange}
                 className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100"
               />
             </div>
@@ -73,8 +91,9 @@ export default function AdvancedSettings({ onChange }: { onChange: (settings: RA
               Embedding Model
             </label>
             <select
+              name="embeddingModel"
               value={settings.embeddingModel}
-              onChange={(e) => handleChange('embeddingModel', e.target.value)}
+              onChange={handleInputChange}
               className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100"
             >
               <option value="all-MiniLM-L6-v2">MiniLM-L6-v2 (Fast)</option>

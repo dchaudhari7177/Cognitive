@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+*.pdf
+uploaded_pdfs/
+.pytest_cache/
+.coverage

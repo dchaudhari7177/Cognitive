@@ -1,15 +1,15 @@
 import { motion } from 'framer-motion';
+import { Metrics } from '@/types/rag';
 
-interface MetricsProps {
-  metrics: any;
-  architecture: string;
+interface PerformanceMetricsProps {
+  metrics: Metrics | undefined;
+  architecture?: string;  // Make optional since it's not used
 }
 
-export default function PerformanceMetrics({ metrics, architecture }: MetricsProps) {
+export default function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
   if (!metrics?.performance_metrics) return null;
 
   const {
-    relevance_scores,
     diversity_score,
     context_usage,
     confidence_score
