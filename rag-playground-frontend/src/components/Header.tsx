@@ -13,7 +13,7 @@ export default function Header() {
           </div>
           <div className="flex items-center space-x-6">
             <a
-              href="https://github.com/yourusername/rag-playground"
+              href="https://github.com/dchaudhari7177/Cognitive"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
