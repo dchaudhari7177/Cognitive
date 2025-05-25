@@ -50,7 +50,7 @@ export default function Home() {
     formData.append('settings', JSON.stringify(aiSettings));
 
     try {
-      const response = await fetch("http://localhost:8000/query", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/query`, {
         method: "POST",
         body: formData,
       });
