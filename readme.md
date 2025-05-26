@@ -3,6 +3,14 @@
 https://github.com/dchaudhari7177/Cognitive.git 
 > 👆 Public repository containing the full source code.
 
+# Frontend = 
+> https://helloworlfd.vercel.app/
+---
+# Please Watch the video Below
+ **Watch the demo video on Google Drive:**  
+👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
+*(R)*
+
 ---
 
 ## 📹 Demo Video (Local Functionality)
@@ -16,12 +24,8 @@ To demonstrate the complete flow, here’s a **video recorded from the local set
 - Side-by-side output comparison with context
 
 📁
-
 ---
-# Please Watch the video Below
- **Watch the demo video on Google Drive:**  
-👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
-*(R)*
+
 ## 🔍 Project Overview
 
 This project implements a **RAG Playground** that allows users to:
