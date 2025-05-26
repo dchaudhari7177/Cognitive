@@ -43,7 +43,7 @@ export default function Home() {
     formData.append('settings', JSON.stringify(aiSettings));
 
     try {
-      const response = await fetch(`${API_URL}/query`, {
+      const response = await fetch(`https://rag-playground-backend-gukj.onrender.com/query`, {
         method: "POST",
         body: formData,
       });
