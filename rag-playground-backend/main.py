@@ -23,13 +23,6 @@ PORT = int(os.getenv("PORT", "10000"))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Update CORS settings
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://cognitive-seven.vercel.app",
-]
-
 # Create FastAPI app
 app = FastAPI(
     title="RAG Playground API",
@@ -38,26 +31,19 @@ app = FastAPI(
     root_path=""  # Important for Render deployment
 )
 
-# Configure CORS with updated settings
+# Update CORS settings
+origins = [
+    "*"
+]
+
+# Update CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=False,  # Important: set to False for public API
+    allow_origins=["*"],  # or ["*"] for all
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Add preflight handler
-@app.options("/{path:path}")
-async def preflight_handler(path: str):
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
 
 # Memory optimization
 @app.middleware("http")
@@ -68,20 +54,17 @@ async def clean_up_memory(request, call_next):
 
 # Update UPLOAD_DIR configuration
 if os.environ.get('RENDER'):
-    # On Render.com, use a path that's definitely writable
-    UPLOAD_DIR = "/tmp/uploaded_pdfs"
+    UPLOAD_DIR = "/tmp/uploaded_pdfs"  # Use /tmp for Render
 else:
-    # Local development path
     UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "uploaded_pdfs"))
 
-# Ensure upload directory exists with proper permissions
+# Ensure upload directory exists
 try:
     os.makedirs(UPLOAD_DIR, mode=0o777, exist_ok=True)
-    logger.info(f"Upload directory configured and created at: {UPLOAD_DIR}")
+    logger.info(f"Created upload directory at: {UPLOAD_DIR}")
 except Exception as e:
     logger.error(f"Failed to create upload directory: {e}")
-    # Use /tmp as fallback
-    UPLOAD_DIR = "/tmp"
+    UPLOAD_DIR = "/tmp"  # Fallback to /tmp if creation fails
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     logger.info(f"Using fallback upload directory: {UPLOAD_DIR}")
 
@@ -107,25 +90,10 @@ async def health_check():
 async def query(
     pdf: UploadFile = File(...),
     query: str = Form(...),
-    architectures: str = Form(...),
-    settings: str = Form(None)  # Make settings optional
+    architectures: str = Form(...)
 ):
     file_path = None
-    headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-    }
-    
     try:
-        # Verify upload directory exists and is writable
-        if not os.path.exists(UPLOAD_DIR):
-            os.makedirs(UPLOAD_DIR, mode=0o777, exist_ok=True)
-        
-        if not os.access(UPLOAD_DIR, os.W_OK):
-            logger.error(f"Upload directory {UPLOAD_DIR} is not writable")
-            raise HTTPException(status_code=500, detail="Server configuration error - upload directory not writable")
-
         # Parse architectures early to validate JSON
         try:
             architectures_list = json.loads(architectures)
@@ -134,20 +102,18 @@ async def query(
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid architectures JSON")
 
-        # Update file path handling
+        # Save PDF with better error handling
         file_id = str(uuid.uuid4())
         file_path = os.path.join(UPLOAD_DIR, f"{file_id}.pdf")
         logger.info(f"Attempting to save file to: {file_path}")
         
-        try:
-            content = await pdf.read()
-            with open(file_path, "wb") as f:
-                f.write(content)
-            logger.info(f"Successfully saved file at: {file_path}")
-        except Exception as e:
-            logger.error(f"Failed to save file: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
-
+        # Save PDF
+        content = await pdf.read()
+        logger.info(f"Read file content, size: {len(content)} bytes")
+        
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
         if os.path.exists(file_path):
             logger.info(f"Successfully saved file at: {file_path}")
             file_size = os.path.getsize(file_path)
@@ -188,16 +154,21 @@ async def query(
                     "time": 0
                 })
 
-        return JSONResponse(content={"results": results}, headers=headers)
+        return {"results": results}
 
     except Exception as e:
-        logger.error(f"Error processing request: {e}")
-        if file_path and os.path.exists(file_path):
-            try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=400, detail=str(e))
+        
+    finally:
+        # Cleanup in finally block
+        try:
+            if file_path and os.path.exists(file_path):
                 os.remove(file_path)
-            except Exception as cleanup_error:
-                logger.error(f"Failed to cleanup file: {cleanup_error}")
-        raise HTTPException(status_code=500, detail=str(e))
+                logger.info(f"Cleaned up file: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to cleanup file {file_path}: {str(e)}")
 
 # Add error logger
 @app.middleware("http")
@@ -231,7 +202,4 @@ if __name__ == "__main__":
         access_log=True,
         limit_concurrency=10,
         timeout_keep_alive=65,
-        forwarded_allow_ips="*",  # Important for proxy support
     )
-
-
