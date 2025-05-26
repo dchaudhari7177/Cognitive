@@ -30,7 +30,7 @@ To demonstrate the complete flow, here’s a **video recorded from the local set
 
 This project implements a **RAG Playground** that allows users to:
 
-- Upload one or more **PDFs**
+- Upload **PDFs**
 - Query across **multiple RAG pipelines**
 - **Compare outputs** side-by-side or in tabbed view
 - View **retrieved context**, **source metadata**, and **LLM-generated answers**
