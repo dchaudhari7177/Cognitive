@@ -32,14 +32,19 @@ To demonstrate the complete flow, here’s a **video recorded from the local set
 
 📁
 ---
-## 🚀 How to Run 
-### 1. Start the Frontend
+## 🚀 How to Run
+
+```bash
+# Start the Frontend
 cd rag-playground-frontend
-npm install  
+npm install
 npm run dev
-### 1. Start the Frontend
+
+# Start the Backend
 cd rag-playground-backend
 uvicorn app:main --reload
+```
+
 
 
 ## 🔍 Project Overview
