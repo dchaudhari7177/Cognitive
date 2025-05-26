@@ -1,10 +1,10 @@
 # 🧠 RAG Playground – Compare Multiple RAG Architectures
 
 # Keys:-
-> Backend is hosted correctly
-> frontend is hosted correctly
-> render is computing the results correctly
-> but at the time of response back it shows CORS error
+> Backend is hosted correctly, 
+> frontend is hosted correctly, 
+> render is computing the results correctly, 
+> but at the time of response back it shows CORS error, 
 > by the way all its working fine on the local system
 
 # Frontend = 
