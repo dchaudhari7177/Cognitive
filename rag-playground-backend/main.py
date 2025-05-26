@@ -28,22 +28,36 @@ app = FastAPI(
     title="RAG Playground API",
     description="API for RAG Playground",
     version="1.0.0",
-    root_path=""  # Important for Render deployment
+    root_path="" 
 )
 
-# Update CORS settings
-origins = [
-    "*"
+# Update CORS settings with all required origins
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://cognitive-seven.vercel.app",
+    "https://rag-playground-frontend.vercel.app",
+    "https://rag-playground-backend-gukj.onrender.com"
 ]
 
-# Update CORS configuration
+# Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or ["*"] for all
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,  
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
+
+# Add CORS headers to response
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 # Memory optimization
 @app.middleware("http")
