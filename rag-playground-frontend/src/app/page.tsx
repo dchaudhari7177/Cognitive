@@ -11,7 +11,11 @@ import AIFeatures from '@/components/AIFeatures';
 import Analytics from '@/components/Analytics';
 import ArchitectureComparison from '@/components/ArchitectureComparison';
 import { AISettings, ProcessingMetadata, RAGResult } from "@/types";
-import { API_URL } from '@/config';
+
+const isDevelopment = process.env.NODE_ENV === 'development';
+const API_URL = isDevelopment 
+  ? 'http://localhost:8000'  // Use http instead of https for local development
+  : 'https://rag-playground-backend-gukj.onrender.com';
 
 export default function Home() {
   const [results, setResults] = useState<RAGResult[]>([]);
@@ -43,9 +47,15 @@ export default function Home() {
     formData.append('settings', JSON.stringify(aiSettings));
 
     try {
-      const response = await fetch(`https://rag-playground-backend-gukj.onrender.com/query`, {
+      console.log('Sending request to:', API_URL); // Debug log
+      const response = await fetch(`${API_URL}/query`, {
         method: "POST",
         body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors',
+        credentials: 'omit',
       });
 
       const data = await response.json();

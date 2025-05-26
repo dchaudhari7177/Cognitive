@@ -129,9 +129,9 @@ async def query(
         if not text or not text.strip():
             raise HTTPException(status_code=400, detail="No text content found in PDF")
         
-        # Process one architecture at a time
+        # Process all selected architectures
         results = []
-        for arch in architectures_list[:1]:  # Only process first selected architecture
+        for arch in architectures_list:  # Removed [:1] to process all architectures
             try:
                 gc.collect()  # Clean up before each processing
                 start_time = time.time()
