@@ -1,7 +1,11 @@
 # 🧠 RAG Playground – Compare Multiple RAG Architectures
 
-https://github.com/dchaudhari7177/Cognitive.git 
-> 👆 Public repository containing the full source code.
+# Keys:-
+> Backend is hosted correctly
+> frontend is hosted correctly
+> render is computing the results correctly
+> but at the time of response back it shows CORS error
+> by the way all its working fine on the local system
 
 # Frontend = 
 > https://helloworlfd.vercel.app/  (For Reference to All the features that i added to my task)
@@ -10,8 +14,11 @@ https://github.com/dchaudhari7177/Cognitive.git
  **Watch the demo video on Google Drive:**  
 👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
 *(R)*
-
 ---
+
+https://github.com/dchaudhari7177/Cognitive.git 
+> 👆 Public repository containing the full source code.
+
 
 ## 📹 Demo Video (Local Functionality)
 
