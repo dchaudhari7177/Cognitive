@@ -14,13 +14,14 @@ To demonstrate the complete flow, here’s a **video recorded from the local set
 - Selecting different RAG pipelines
 - Querying and retrieving results
 - Side-by-side output comparison with context
-**Please Watch the video Below**
-📁 **Watch the demo video on Google Drive:**  
-👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
-*(Replace this link with your actual Google Drive shareable link)*
+
+📁
 
 ---
-
+# Please Watch the video Below
+ **Watch the demo video on Google Drive:**  
+👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
+*(R)*
 ## 🔍 Project Overview
 
 This project implements a **RAG Playground** that allows users to:
