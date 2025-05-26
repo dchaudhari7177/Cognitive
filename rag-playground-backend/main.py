@@ -31,19 +31,23 @@ app = FastAPI(
     root_path="" 
 )
 
+
+
 # Update CORS settings with all required origins
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://cognitive-seven.vercel.app",
     "https://rag-playground-frontend.vercel.app",
-    "https://rag-playground-backend-gukj.onrender.com"
+    "https://rag-playground-backend-gukj.onrender.com",
+    "https://helloworlfd.vercel.app",
+    "*"
 ]
 
 # Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=False,  
+    allow_credentials=False,  # Set to False for cross-origin requests
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
