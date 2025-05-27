@@ -191,8 +191,7 @@ export default function PDFUpload({ onUpload }: { onUpload: (file: File) => void
       {/* Requirements Note */}
       <div className="text-center">
         <p className="text-xs text-gray-500">
-          <span className="text-blue-400">Note:</span> Please ensure your PDF contains selectable text.
-          Image-only or scanned PDFs are not supported.
+          <span className="text-blue-400"></span> 
         </p>
       </div>
     </div>
