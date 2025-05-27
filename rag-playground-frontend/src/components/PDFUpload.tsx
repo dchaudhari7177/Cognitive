@@ -188,12 +188,7 @@ export default function PDFUpload({ onUpload }: { onUpload: (file: File) => void
         </motion.div>
       )}
 
-      {/* Requirements Note */}
-      <div className="text-center">
-        <p className="text-xs text-gray-500">
-          <span className="text-blue-400"></span> 
-        </p>
-      </div>
+    
     </div>
   );
 }
