@@ -11,7 +11,6 @@ import AIFeatures from '@/components/AIFeatures';
 import Analytics from '@/components/Analytics';
 import ArchitectureComparison from '@/components/ArchitectureComparison';
 import { AISettings, ProcessingMetadata, RAGResult } from "@/types";
-import { API_URL } from '@/config';
 
 export default function Home() {
   const [results, setResults] = useState<RAGResult[]>([]);
