@@ -1,7 +1,11 @@
 # 🧠 RAG Playground – Compare Multiple RAG Architectures
 
-https://github.com/dchaudhari7177/Cognitive.git 
-> 👆 Public repository containing the full source code.
+# Keys:-
+> Backend is hosted correctly, 
+> frontend is hosted correctly, 
+> render is computing the results correctly, 
+> but at the time of response back it shows CORS error, 
+> by the way all its working fine on the local system
 
 # Frontend = 
 > https://helloworlfd.vercel.app/  (For Reference to All the features that i added to my task)
@@ -10,8 +14,11 @@ https://github.com/dchaudhari7177/Cognitive.git
  **Watch the demo video on Google Drive:**  
 👉 [Click here to view the demo](https://drive.google.com/file/d/1J03PcaxUngdxH9xMmX1KNjoCyf99w9QD/view?usp=sharing)  
 *(R)*
-
 ---
+
+https://github.com/dchaudhari7177/Cognitive.git 
+> 👆 Public repository containing the full source code.
+
 
 ## 📹 Demo Video (Local Functionality)
 
@@ -25,6 +32,20 @@ To demonstrate the complete flow, here’s a **video recorded from the local set
 
 📁
 ---
+## 🚀 How to Run
+
+```bash
+# Start the Frontend
+cd rag-playground-frontend
+npm install
+npm run dev
+
+# Start the Backend
+cd rag-playground-backend
+uvicorn app:main --reload
+```
+
+
 
 ## 🔍 Project Overview
 
